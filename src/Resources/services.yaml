@@ -1,0 +1,3 @@
+services:
+    App\Service\QueueService:
+        arguments: ['%redis_host%', '%redis_port%']

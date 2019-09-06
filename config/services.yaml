@@ -1,0 +1,22 @@
+parameters:
+    vk_confirmation_token: '%env(VK_CONFIRMATION_TOKEN)%'
+    vk_token: '%env(VK_TOKEN)%'
+    vk_group_id: '%env(VK_GROUP_ID)%'
+    redis_host: '%env(REDIS_HOST)%'
+    redis_port: '%env(REDIS_PORT)%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/*'
+        exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
+
+    App\Controller\:
+        resource: '../src/Controller'
+        tags: ['controller.service_arguments']
+
+    App\Service\:
+        resource: '../src/Service'
