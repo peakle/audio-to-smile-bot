@@ -13,6 +13,10 @@ class QueueService
      */
     protected $queueClient;
 
+    /**
+     * @param string $redisHost
+     * @param string $redisPort
+     */
     public function __construct(string $redisHost, string $redisPort)
     {
         $this->queueClient = new Redis([

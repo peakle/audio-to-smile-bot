@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class DefaultController extends AbstractController
 {
+    private const QUEUE_NAME_SMILE = 'queue_create';
+
     /**
      * @var QueueService $queueService
      */
@@ -37,7 +39,12 @@ class DefaultController extends AbstractController
 
         try {
             $data = json_decode($request->request, true);
-            $this->queueService->put(Queue::QUEUE_NAME_SMILE, serialize($data->object));
+            $queueBody = json_encode([
+                'user_id' => $data->user_id,
+                'message' => $data->body->message
+            ]);
+
+            $this->queueService->put(self::QUEUE_NAME_SMILE, $queueBody);
         } catch (Exception $exception) {
         }
     }

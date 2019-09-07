@@ -18,5 +18,7 @@ services:
         resource: '../src/Controller'
         tags: ['controller.service_arguments']
 
-    App\Service\:
-        resource: '../src/Service'
+    App\Service\QueueService:
+        bind:
+            $redisHost: '%redis_host%'
+            $redisPort: '%redis_port%'

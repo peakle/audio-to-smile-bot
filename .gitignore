@@ -21,3 +21,7 @@
 .DS_Store
 /docker/.data/
 .idea/
+
+/go/bin/
+/go/pkg/
+/go/src/github.com/
