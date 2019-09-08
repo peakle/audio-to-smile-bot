@@ -1,4 +1,4 @@
-package MessageDemon
+package main
 
 import (
 	"database/sql"
@@ -137,7 +137,13 @@ func generateTrack(emojiList []int) string {
 	}
 
 	if len(tracks) > 0 {
-		cmd := exec.Command("sox", tracks+full)
+		command := "sox"
+
+		if len(tracks) == 1 {
+			command = "cp"
+		}
+
+		cmd := exec.Command(command, tracks+full)
 		err := cmd.Run()
 
 		if err != nil {
