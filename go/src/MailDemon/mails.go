@@ -49,7 +49,7 @@ var accessToken string
 const SendQ = "queue_send"
 const ApiMessage = "https://api.vk.com/method/messages.send?"
 const ApiSave = "https://api.vk.com/method/docs.save?"
-const ApiUploadServer = "https://api.vk.com/method/docs.getUploadServer?type=audio_message&peed_id="
+const ApiUploadServer = "https://api.vk.com/method/docs.getUploadServer?type=audio_message&peer_id="
 
 func main() {
 	err := godotenv.Load(".env")
