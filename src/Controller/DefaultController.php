@@ -20,11 +20,25 @@ class DefaultController extends AbstractController
     protected $queueService;
 
     /**
-     * @param QueueService $queueService
+     * @var string
      */
-    public function __construct(QueueService $queueService)
+    protected $groupId;
+
+    /**
+     * @var string
+     */
+    protected $vkConfirmationToken;
+
+    /**
+     * @param QueueService $queueService
+     * @param string $groupId
+     * @param string $vkConfirmationToken
+     */
+    public function __construct(QueueService $queueService, string $groupId, string $vkConfirmationToken)
     {
         $this->queueService = $queueService;
+        $this->groupId = $groupId;
+        $this->vkConfirmationToken = $vkConfirmationToken;
     }
 
     public function index(): void
@@ -32,7 +46,7 @@ class DefaultController extends AbstractController
         fastcgi_finish_request();
     }
 
-    public function messageBox(Request $request): Response
+    public function messageBox(Request $request): void
     {
         echo 'ok';
         fastcgi_finish_request();
@@ -54,11 +68,8 @@ class DefaultController extends AbstractController
         $data = json_decode($request->request, true);
 
         if (isset($data->type) && $data->type === 'confirmation') {
-            $groupId = $this->getParameter('group_id');
-
-            if (isset($data->group_id) && $data->group_id === $groupId) {
-                $token = $this->getParameter('vk_confirmation_token');
-                return new Response($token);
+            if (isset($data->group_id) && $data->group_id === $this->groupId) {
+                return new Response($this->vkConfirmationToken);
             }
         }
 

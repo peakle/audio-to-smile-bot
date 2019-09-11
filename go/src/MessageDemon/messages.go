@@ -56,7 +56,7 @@ func main() {
 
 func handle() {
 	for {
-		if consumerCount < 10 {
+		if consumerCount < 2 {
 			consumerCount++
 			go consumer()
 		}
@@ -179,9 +179,9 @@ func redisConnect() bool {
 		DB:       0,
 	})
 
-	_, err := queue.Ping().Result()
+	res, err := queue.Ping().Result()
 
-	if err != nil {
+	if err != nil || res == "" {
 		return false
 	}
 

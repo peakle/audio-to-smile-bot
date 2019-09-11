@@ -41,6 +41,7 @@ services:
             XDEBUG_CONFIG: remote_port=9001 remote_connect_back=0
 
     nginx:
+        container_name: ${PROJECT_NAME}_nginx
         build: nginx
         ports:
             - 80:80

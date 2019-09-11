@@ -18,6 +18,12 @@ services:
         resource: '../src/Controller'
         tags: ['controller.service_arguments']
 
+    App\Controller\DefaultController:
+        tags: ['controller.service_arguments']
+        bind:
+            $groupId: '%vk_group_id%'
+            $vkConfirmationToken: '%vk_confirmation_token%'
+
     App\Service\QueueService:
         bind:
             $redisHost: '%redis_host%'

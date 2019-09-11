@@ -98,12 +98,16 @@ func consumer() {
 		return
 	}
 
-	body := queueBody.Message
+	message := queueBody.Message
 	userId := queueBody.UserId
 
-	server := getVkUploadServer(userId)
+	server, err := getVkUploadServer(userId)
+	if err != nil {
+		fmt.Println("error get upload server")
+		return
+	}
 
-	fileId, ownerId, err := uploadVkAudio(server, body)
+	fileId, ownerId, err := uploadVkAudio(server, message)
 	if err != nil {
 		fmt.Println("error in upload audio")
 		return
@@ -142,12 +146,9 @@ func sendMessage(fileId, ownerId, userId string) {
 	if err != nil {
 		fmt.Println("error in json decode")
 	}
-
-	return
 }
 
 func uploadVkAudio(server, trackname string) (string, string, error) {
-	var err error
 	fileDir, _ := os.Getwd()
 	filePath := path.Join(fileDir, trackname)
 
@@ -188,10 +189,9 @@ func uploadVkAudio(server, trackname string) (string, string, error) {
 		fmt.Println("error send request")
 		return "", "", err
 	}
+
 	var uploadFile saveApi
-
 	resBody, err := ioutil.ReadAll(res.Body)
-
 	err = json.Unmarshal([]byte(resBody), &uploadFile)
 
 	fileId, ownerId, err := saveFileVk(uploadFile.File)
@@ -234,7 +234,7 @@ func saveFileVk(file string) (string, string, error) {
 	return saveRes.Id, saveRes.OwnerId, nil
 }
 
-func getVkUploadServer(peerId string) string {
+func getVkUploadServer(peerId string) (string, error) {
 	var server uploadApi
 	baseUrl := ApiUploadServer
 	ver := os.Getenv("VK_API_VERSION")
@@ -244,19 +244,19 @@ func getVkUploadServer(peerId string) string {
 
 	if err != nil {
 		fmt.Println("error in request vk")
-		return ""
+		return "", err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
 		fmt.Println("error in read response vk")
-		return ""
+		return "", err
 	}
 
 	err = json.Unmarshal(body, &server)
 
-	return server.UploadUrl
+	return server.UploadUrl, nil
 }
 
 func closeConsumer() {
@@ -272,9 +272,9 @@ func redisConnect() bool {
 		DB:       0,
 	})
 
-	_, err := queue.Ping().Result()
+	res, err := queue.Ping().Result()
 
-	if err != nil {
+	if err != nil || res == "" {
 		return false
 	}
 
