@@ -67,9 +67,11 @@ func handle() {
 
 func consumer() {
 	defer closeConsumer()
-
 	var queueBody []QueueBody
+
+	mu.Lock()
 	task := queue.Get(createQ)
+	mu.Unlock()
 
 	taskBody, err := task.Result()
 	if err != nil {
@@ -106,13 +108,13 @@ func consumer() {
 		return
 	}
 
+	mu.Lock()
 	queue.Set(sendQ, message, 0)
+	mu.Unlock()
 }
 
 func closeConsumer() {
-	mu.Lock()
 	consumerCount--
-	mu.Unlock()
 }
 
 func generateTrack(emojiList []int) string {

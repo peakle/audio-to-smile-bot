@@ -84,7 +84,10 @@ func consumer() {
 	defer closeConsumer()
 	var queueBody QueueBody
 
+	mu.Lock()
 	task := queue.Get(SendQ)
+	mu.Unlock()
+
 	taskBody, err := task.Result()
 	if err != nil {
 		fmt.Println("error in get task body")
@@ -260,9 +263,7 @@ func getVkUploadServer(peerId string) (string, error) {
 }
 
 func closeConsumer() {
-	mu.Lock()
 	consumerCount--
-	mu.Unlock()
 }
 
 func redisConnect() bool {
