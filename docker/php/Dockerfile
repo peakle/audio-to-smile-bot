@@ -1,6 +1,6 @@
-FROM registry.wake-app.net/wakeapp/php:7.2-fpm
+FROM php:7.2-fpm
 
-RUN apt-get update && apt install -y \
+RUN apt-get update && apt-get install -y \
 		libfreetype6-dev \
 		libjpeg62-turbo-dev \
 		libpng-dev \
@@ -9,6 +9,6 @@ RUN apt-get update && apt install -y \
 	&& docker-php-ext-install -j$(nproc) gd
 
 RUN apt-get install -y sox
-RUN apt-get install -yq mysql-client
+RUN apt-get install -y default-mysql-client
 
 WORKDIR /app
