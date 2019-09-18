@@ -5,17 +5,15 @@ volumes:
         name: ${PROJECT_NAME}_app_volume
 
 services:
-    db:
+    mysql:
         container_name: ${PROJECT_NAME}_db
         image: mysql:8.0
         ports:
-            - 3306:3306
+            - "3306:3306"
         volumes:
             - ./.data/db:/var/lib/mysql
         user: mysql
         command: ["--default-authentication-plugin=mysql_native_password"]
-        depends_on:
-            - php
         environment:
             MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
             MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -25,10 +23,12 @@ services:
     php:
         container_name: ${PROJECT_NAME}_php
         build:
-            context: php
+            context: ./php
 #        ports:
-#            - 9000:9000
+#            - "9000:9000"
 #        command: php-fpm -d zend_extension=xdebug.so
+        links:
+          - mysql
         working_dir: /app
         volumes:
             - app_volume:/app
@@ -39,11 +39,12 @@ services:
 
     nginx:
         container_name: ${PROJECT_NAME}_nginx
-        build: nginx
+        build:
+            context: ./nginx
         ports:
-            - 80:80
-            - 443:443
-        depends_on:
+            - "80:80"
+            - "443:443"
+        links:
             - php
         volumes:
             - app_volume:/app
