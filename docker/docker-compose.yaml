@@ -3,11 +3,6 @@ version: '3.7'
 volumes:
     app_volume:
         name: ${PROJECT_NAME}_app_volume
-        driver: local
-        driver_opts:
-            type: nfs
-            o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3
-            device: ":${PWD}"
 
 services:
     db:
@@ -19,6 +14,8 @@ services:
             - ./.data/db:/var/lib/mysql
         user: mysql
         command: ["--default-authentication-plugin=mysql_native_password"]
+        depends_on:
+            - php
         environment:
             MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
             MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -35,7 +32,7 @@ services:
         working_dir: /app
         volumes:
             - app_volume:/app
-            - ~/.ssh/id_rsa:/root/.ssh/id_rsa:ro
+#            - ~/.ssh/id_rsa:/root/.ssh/id_rsa:ro
         environment:
             PHP_IDE_CONFIG: serverName=${PROJECT_NAME}
             XDEBUG_CONFIG: remote_port=9001 remote_connect_back=0
