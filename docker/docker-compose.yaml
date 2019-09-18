@@ -54,3 +54,4 @@ services:
         image: redis
         ports:
             - ${REDIS_PORT}:${REDIS_PORT}
+
