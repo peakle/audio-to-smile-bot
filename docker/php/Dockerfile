@@ -10,5 +10,6 @@ RUN apt-get update && apt-get install -y \
 
 RUN apt-get install -y sox
 RUN apt-get install -y default-mysql-client
+RUN curl -sS https://getcomposer.org/installer -o composer-setup.php &&  php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 
 WORKDIR /app

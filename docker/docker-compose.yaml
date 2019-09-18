@@ -27,7 +27,8 @@ services:
           - mysql
         working_dir: /app
         volumes:
-            - "../src:/app"
+            - "../.:/app"
+#            - ~/.ssh/id_rsa:/root/.ssh/id_rsa:ro
         environment:
             PHP_IDE_CONFIG: serverName=${PROJECT_NAME}
             XDEBUG_CONFIG: remote_port=9001 remote_connect_back=0
@@ -42,7 +43,7 @@ services:
         links:
             - php
         volumes:
-            - app_volume:/app
+            - "../.:/app"
 
     redis:
         container_name: ${PROJECT_NAME}_redis
