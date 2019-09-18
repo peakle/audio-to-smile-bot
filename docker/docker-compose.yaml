@@ -1,9 +1,5 @@
 version: '3.7'
 
-volumes:
-    app_volume:
-        name: ${PROJECT_NAME}_app_volume
-
 services:
     mysql:
         container_name: ${PROJECT_NAME}_db
@@ -31,8 +27,7 @@ services:
           - mysql
         working_dir: /app
         volumes:
-            - app_volume:/app
-#            - ~/.ssh/id_rsa:/root/.ssh/id_rsa:ro
+            - "../src:/app"
         environment:
             PHP_IDE_CONFIG: serverName=${PROJECT_NAME}
             XDEBUG_CONFIG: remote_port=9001 remote_connect_back=0
