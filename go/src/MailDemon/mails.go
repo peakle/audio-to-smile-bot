@@ -149,6 +149,8 @@ func sendMessage(fileId, ownerId, userId string) {
 	if err != nil {
 		fmt.Println("error in json decode")
 	}
+
+	fmt.Println("Сообщение отправлено")
 }
 
 func uploadVkAudio(server, trackname string) (string, string, error) {
@@ -267,8 +269,9 @@ func closeConsumer() {
 }
 
 func redisConnect() bool {
+	redisAddr := os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT")
 	queue = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     redisAddr,
 		Password: "",
 		DB:       0,
 	})

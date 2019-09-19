@@ -175,8 +175,10 @@ func findEmoji(text string) []int {
 }
 
 func redisConnect() bool {
+	redisAddr := os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT")
+
 	queue = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     redisAddr,
 		Password: "",
 		DB:       0,
 	})
@@ -196,8 +198,9 @@ func mysqlConnect() bool {
 	user := os.Getenv("MYSQL_USER")
 	password := os.Getenv("MYSQL_PASSWORD")
 	dbName := os.Getenv("MYSQL_DATABASE")
+	mysqlAddr := os.Getenv("MYSQL_HOST") + ":" + os.Getenv("MYSQL_PORT")
 
-	cred := user + ":" + password + "@tcp(localhost:3306)/" + dbName
+	cred := user + ":" + password + "@tcp(" + mysqlAddr + ")/" + dbName
 
 	db, err = sql.Open("mysql", cred)
 
