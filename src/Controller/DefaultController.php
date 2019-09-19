@@ -30,47 +30,84 @@ class DefaultController extends AbstractController
     protected $vkConfirmationToken;
 
     /**
+     * @var string
+     */
+    private $secret;
+
+    /**
      * @param QueueService $queueService
      * @param string $groupId
      * @param string $vkConfirmationToken
+     * @param string $secret
      */
-    public function __construct(QueueService $queueService, string $groupId, string $vkConfirmationToken)
-    {
+    public function __construct(
+        QueueService $queueService,
+        string $groupId,
+        string $vkConfirmationToken,
+        string $secret
+    ) {
         $this->queueService = $queueService;
         $this->groupId = $groupId;
         $this->vkConfirmationToken = $vkConfirmationToken;
+        $this->secret = $secret;
     }
 
-    public function index(): void
+    /**
+     * @param Request $request
+     *
+     * @return Response|null
+     */
+    public function index(Request $request): ?Response
     {
-        fastcgi_finish_request();
-    }
+        $content = $request->getContent();
+        $data = json_decode($content, true);
 
-    public function messageBox(Request $request): void
-    {
-        echo 'ok';
-        fastcgi_finish_request();
+        if (!isset($data['secret']) || $data['secret'] !== $this->secret) {
+            fastcgi_finish_request();
+        }
 
-        try {
-            $data = json_decode($request->request, true);
-            $queueBody = json_encode([
-                'user_id' => $data->user_id,
-                'message' => $data->body->message
-            ]);
-
-            $this->queueService->put(self::QUEUE_NAME_SMILE, $queueBody);
-        } catch (Exception $exception) {
+        if (isset($data['type'])) {
+            switch ($data['type']) {
+                case 'confirmation':
+                    return $this->confirmation($data);
+                case 'message_new':
+                    $this->messageBox($data);
+                    break;
+                default:
+                    fastcgi_finish_request();
+                    break;
+            }
         }
     }
 
-    public function confirmation(Request $request): ?Response
+    /**
+     * @param array $data
+     */
+    private function messageBox(array $data): void
     {
-        $data = json_decode($request->request, true);
+        try {
+            $queueBody = json_encode([
+                'user_id' => $data['from_id'],
+                'message' => $data['object']['text']
+            ]);
 
-        if (isset($data->type) && $data->type === 'confirmation') {
-            if (isset($data->group_id) && $data->group_id === $this->groupId) {
-                return new Response($this->vkConfirmationToken);
-            }
+            $this->queueService->put(self::QUEUE_NAME_SMILE, $queueBody);
+            echo 'ok';
+        } catch (Exception $exception) {
+            fastcgi_finish_request();
+        }
+    }
+
+    /**
+     * @param array $data
+     *
+     * @return Response|null
+     */
+    private function confirmation(array $data): ?Response
+    {
+        if ($data['group_id'] && (string)$data['group_id'] === $this->groupId
+        ) {
+            return new Response($this->vkConfirmationToken);
         }
 
         fastcgi_finish_request();

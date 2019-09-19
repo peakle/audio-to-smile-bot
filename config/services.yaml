@@ -2,6 +2,7 @@ parameters:
     vk_confirmation_token: '%env(VK_CONFIRMATION_TOKEN)%'
     vk_token: '%env(VK_TOKEN)%'
     vk_group_id: '%env(VK_GROUP_ID)%'
+    vk_secret: '%env(VK_API_SECRET)%'
     redis_host: '%env(REDIS_HOST)%'
     redis_port: '%env(REDIS_PORT)%'
 
@@ -23,6 +24,7 @@ services:
         bind:
             $groupId: '%vk_group_id%'
             $vkConfirmationToken: '%vk_confirmation_token%'
+            $secret: '%vk_secret%'
 
     App\Service\QueueService:
         bind:

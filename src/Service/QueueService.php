@@ -26,17 +26,21 @@ class QueueService
         ]);
     }
 
+    /**
+     * @param string $queueName
+     * @param string $data
+     */
     public function put(string $queueName, string $data): void
     {
         $this->queueClient->set($queueName, $data);
     }
 
-    public function take(string $queueName)
+    /**
+     * @param string $queueName
+     * @return string
+     */
+    public function take(string $queueName): string
     {
         return $this->queueClient->get($queueName);
-    }
-
-    public function delete(string $queueName, string $taskId): void
-    {
     }
 }

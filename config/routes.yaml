@@ -3,7 +3,7 @@ index:
     controller: App\Controller\DefaultController::index
 
 confirmation:
-    path: /cofirmation
+    path: /confirmation
     controller: App\Controller\DefaultController::confirmation
 
 messagebox:
