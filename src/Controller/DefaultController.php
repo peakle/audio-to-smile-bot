@@ -71,8 +71,7 @@ class DefaultController extends AbstractController
                 case 'confirmation':
                     return $this->confirmation($data);
                 case 'message_new':
-                    $this->messageBox($data);
-                    break;
+                    return $this->messageBox($data);
                 default:
                     fastcgi_finish_request();
                     break;
@@ -82,20 +81,23 @@ class DefaultController extends AbstractController
 
     /**
      * @param array $data
+     *
+     * @return Response|null
      */
-    private function messageBox(array $data): void
+    private function messageBox(array $data): ?Response
     {
         try {
             $queueBody = json_encode([
-                'user_id' => $data['from_id'],
+                'user_id' => $data['object']['from_id'],
                 'message' => $data['object']['text']
             ]);
 
             $this->queueService->put(self::QUEUE_NAME_SMILE, $queueBody);
-            echo 'ok';
         } catch (Exception $exception) {
             fastcgi_finish_request();
         }
+
+        return new Response('ok');
     }
 
     /**
@@ -105,11 +107,10 @@ class DefaultController extends AbstractController
      */
     private function confirmation(array $data): ?Response
     {
-        if ($data['group_id'] && (string)$data['group_id'] === $this->groupId
-        ) {
+        if ($data['group_id'] && (string)$data['group_id'] === $this->groupId) {
             return new Response($this->vkConfirmationToken);
         }
 
-        fastcgi_finish_request();
+        return null;
     }
 }
