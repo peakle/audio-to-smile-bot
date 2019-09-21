@@ -58,7 +58,7 @@ func handle() {
 	for {
 		queueLen := queue.LLen(SendQ).Val()
 		if queueLen > 0 && consumerCount < 2 {
-			task := queue.Get(CreateQ)
+			task := queue.LPop(CreateQ)
 			go consumer(task)
 			consumerCount++
 		}
@@ -107,7 +107,7 @@ func consumer(task *redis.StringCmd) {
 	}
 
 	mu.Lock()
-	queue.Set(SendQ, message, 0)
+	queue.RPush(SendQ, message, 0)
 	mu.Unlock()
 }
 

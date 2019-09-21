@@ -73,7 +73,7 @@ func handle() {
 	for {
 		queueLen := queue.LLen(SendQ).Val()
 		if queueLen > 0 && consumerCount < 2 {
-			task := queue.Get(SendQ)
+			task := queue.LPop(SendQ)
 			go consumer(task)
 			consumerCount++
 		}
