@@ -45,6 +45,7 @@ var queue *redis.Client
 var consumerCount uint8 = 0
 var mu sync.Mutex
 var accessToken string
+var err error
 
 const SendQ = "queue_send"
 const ApiMessage = "https://api.vk.com/method/messages.send?"
@@ -52,7 +53,7 @@ const ApiSave = "https://api.vk.com/method/docs.save?"
 const ApiUploadServer = "https://api.vk.com/method/docs.getUploadServer?type=audio_message&peer_id="
 
 func main() {
-	err := godotenv.Load(".env")
+	err = godotenv.Load(".env")
 	if err != nil {
 		fmt.Println("error when open env")
 		return
@@ -83,17 +84,18 @@ func handle() {
 }
 
 func consumer(task *redis.StringCmd) {
-	defer closeConsumer()
 	var queueBody QueueBody
+	var taskBody string
 
-	taskBody, err := task.Result()
+	taskBody, err = task.Result()
 	if err != nil {
 		fmt.Println("error in get task body")
 		return
 	}
 
-	err = json.Unmarshal([]byte(taskBody), &queueBody)
+	defer closeConsumer(taskBody)
 
+	err = json.Unmarshal([]byte(taskBody), &queueBody)
 	if err != nil {
 		fmt.Println("error in decode json")
 		return
@@ -102,22 +104,24 @@ func consumer(task *redis.StringCmd) {
 	message := queueBody.Message
 	userId := queueBody.UserId
 
-	server, err := getVkUploadServer(userId)
+	var server string
+	server, err = getVkUploadServer(userId)
 	if err != nil {
 		fmt.Println("error get upload server")
 		return
 	}
 
-	fileId, ownerId, err := uploadVkAudio(server, message)
+	var ownerId, fileId string
+	fileId, ownerId, err = uploadVkAudio(server, message)
 	if err != nil {
 		fmt.Println("error in upload audio")
 		return
 	}
 
-	sendMessage(fileId, ownerId, userId)
+	err = sendMessage(fileId, ownerId, userId)
 }
 
-func sendMessage(fileId, ownerId, userId string) {
+func sendMessage(fileId, ownerId, userId string) error {
 	randomId := string(rand.Int() + rand.Intn(1000))
 	document := fmt.Sprintf("doc%s_%s", fileId, ownerId)
 
@@ -133,12 +137,13 @@ func sendMessage(fileId, ownerId, userId string) {
 	res, err := http.Get(fullurl)
 	if err != nil {
 		fmt.Println("error in send message")
-		return
+		return err
 	}
 
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println("error in json decode")
+		return err
 	}
 
 	var resMessage messageApi
@@ -146,9 +151,11 @@ func sendMessage(fileId, ownerId, userId string) {
 	err = json.Unmarshal(resBody, resMessage)
 	if err != nil {
 		fmt.Println("error in json decode")
+		return err
 	}
 
 	fmt.Println("Сообщение отправлено")
+	return nil
 }
 
 func uploadVkAudio(server, trackname string) (string, string, error) {
@@ -219,12 +226,16 @@ func uploadVkAudio(server, trackname string) (string, string, error) {
 
 func saveFileVk(file string) (string, string, error) {
 	fullUrl := ApiSave + "&file=" + file + "&access_token=" + accessToken
-	res, err := http.Get(fullUrl)
 
+	res, err := http.Get(fullUrl)
 	if err != nil {
 		return "", "", err
 	}
-	body, _ := ioutil.ReadAll(res.Body)
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", "", err
+	}
 
 	var saveRes saveResponseApi
 
@@ -244,25 +255,29 @@ func getVkUploadServer(peerId string) (string, error) {
 	Url := baseUrl + peerId + "&v=" + ver + "&access_token=" + accessToken
 
 	resp, err := http.Get(Url)
-
 	if err != nil {
 		fmt.Println("error in request vk")
 		return "", err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
-
 	if err != nil {
 		fmt.Println("error in read response vk")
 		return "", err
 	}
 
 	err = json.Unmarshal(body, &server)
+	if err != nil {
+		return "", err
+	}
 
 	return server.UploadUrl, nil
 }
 
-func closeConsumer() {
+func closeConsumer(task string) {
+	if err != nil {
+		queue.LPush(SendQ, task)
+	}
 	consumerCount--
 }
 
