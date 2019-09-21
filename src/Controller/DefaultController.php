@@ -93,11 +93,10 @@ class DefaultController extends AbstractController
             ]);
 
             $this->queueService->put(self::QUEUE_NAME_SMILE, $queueBody);
+            return new Response('ok');
         } catch (Exception $exception) {
             fastcgi_finish_request();
         }
-
-        return new Response('ok');
     }
 
     /**

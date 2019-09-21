@@ -32,7 +32,7 @@ class QueueService
      */
     public function put(string $queueName, string $data): void
     {
-        $this->queueClient->set($queueName, $data);
+        $this->queueClient->rpush($queueName, [$data]);
     }
 
     /**
@@ -41,6 +41,6 @@ class QueueService
      */
     public function take(string $queueName): string
     {
-        return $this->queueClient->get($queueName);
+        return $this->queueClient->lpop($queueName);
     }
 }
