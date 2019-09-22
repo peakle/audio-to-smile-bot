@@ -50,8 +50,6 @@ func main() {
 
 	if isMysql && isRedis {
 		handle()
-	} else {
-		fmt.Println(`can't connect to redis`)
 	}
 }
 
@@ -64,7 +62,7 @@ func handle() {
 			consumerCount++
 		}
 
-		time.Sleep(1)
+		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -192,8 +190,11 @@ func redisConnect() bool {
 	res, err := queue.Ping().Result()
 
 	if err != nil || res == "" {
+		fmt.Println("can't connect to redis")
 		return false
 	}
+
+	fmt.Println("connected to redis")
 
 	return true
 }
@@ -213,6 +214,8 @@ func mysqlConnect() bool {
 		fmt.Println("error in connect to database")
 		return false
 	}
+
+	fmt.Println("connected to db")
 
 	return true
 }

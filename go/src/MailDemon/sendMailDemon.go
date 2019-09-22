@@ -65,8 +65,6 @@ func main() {
 
 	if isRedis {
 		handle()
-	} else {
-		fmt.Println(`can't connect to redis`)
 	}
 }
 
@@ -79,7 +77,7 @@ func handle() {
 			consumerCount++
 		}
 
-		time.Sleep(1)
+		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -155,6 +153,7 @@ func sendMessage(fileId, ownerId, userId string) error {
 	}
 
 	fmt.Println("Сообщение отправлено")
+
 	return nil
 }
 
@@ -292,8 +291,11 @@ func redisConnect() bool {
 	res, err := queue.Ping().Result()
 
 	if err != nil || res == "" {
+		fmt.Println(`can't connect to redis`)
 		return false
 	}
+
+	fmt.Println("connected to redis")
 
 	return true
 }
