@@ -46,7 +46,9 @@ services:
 
     redis:
         container_name: ${PROJECT_NAME}_redis
-        image: redis
+        entrypoint: redis-server --appendonly yes
+        image: redis:4.0.5-alpine
         ports:
-            - ${REDIS_PORT}:${REDIS_PORT}
-
+            - "6379:6379"
+        volumes:
+            - "./.data/redis:/data"
