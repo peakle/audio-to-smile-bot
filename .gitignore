@@ -22,6 +22,5 @@
 /docker/.data/
 .idea/
 
-/go/bin/
-/go/pkg/
-/go/src/github.com/
+/go/
+!/go/src

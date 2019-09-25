@@ -39,7 +39,7 @@ const CreateQ = "queue_create"
 const SendQ = "queue_send"
 
 func main() {
-	err = godotenv.Load(".env")
+	err = godotenv.Load("../.env")
 	if err != nil {
 		fmt.Println("error when open env")
 		return
@@ -125,9 +125,11 @@ func generateTrack(emojiList []int) (string, error) {
 	randName := rand.Int() + rand.Intn(1000)
 	full := strconv.Itoa(randName) + ".ogg"
 	var tracks string
+	var sample Sample
+	var sampleRoute string
 
 	for num, code := range emojiList {
-		var sample Sample
+		sampleRoute = ""
 		err := db.QueryRow("SELECT s.sample as sample FROM Smile as s WHERE s.code = ?", code).Scan(&sample.Name)
 
 		if err != nil {
@@ -135,10 +137,13 @@ func generateTrack(emojiList []int) (string, error) {
 			return "", err
 		}
 
-		tracks = tracks + sample.Name + ".ogg "
+		if sample.Name != "" {
+			sampleRoute = "../samples/" + sample.Name
+			tracks = tracks + sampleRoute
 
-		if num > 10 {
-			break
+			if num > 10 {
+				break
+			}
 		}
 	}
 

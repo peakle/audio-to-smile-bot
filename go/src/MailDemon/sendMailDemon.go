@@ -53,7 +53,7 @@ const ApiSave = "https://api.vk.com/method/docs.save?"
 const ApiUploadServer = "https://api.vk.com/method/docs.getUploadServer?type=audio_message&peer_id="
 
 func main() {
-	err = godotenv.Load(".env")
+	err = godotenv.Load("../.env")
 	if err != nil {
 		fmt.Println("error when open env")
 		return
