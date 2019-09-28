@@ -55,7 +55,7 @@ func main() {
 
 func handle() {
 	for {
-		queueLen := queue.LLen(SendQ).Val()
+		queueLen := queue.LLen(CreateQ).Val()
 		if queueLen > 0 && consumerCount < 2 {
 			task := queue.LPop(CreateQ)
 			go consumer(task)

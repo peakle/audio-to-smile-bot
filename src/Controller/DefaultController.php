@@ -63,7 +63,7 @@ class DefaultController extends AbstractController
         $data = json_decode($content, true);
 
         if (!isset($data['secret']) || $data['secret'] !== $this->secret) {
-            fastcgi_finish_request();
+            return $this->render('base.html.twig');
         }
 
         if (isset($data['type'])) {
