@@ -261,7 +261,6 @@ func saveFileVk(file string) (string, string, error) {
 	}
 
 	var saveRes saveResponseCollection
-
 	err = json.Unmarshal(body, &saveRes)
 	if err != nil {
 		logger.Println("error on decode json saveResponse " + err.Error())
@@ -272,21 +271,20 @@ func saveFileVk(file string) (string, string, error) {
 }
 
 func sendMessage(fileId, ownerId, userId string) error {
-	randomId := strconv.Itoa(rand.Int() + rand.Intn(100000))
-	logger.Println(fileId, ownerId)
-	document := fmt.Sprintf("doc%s_%s", fileId, ownerId)
+	rand.Seed(time.Now().Unix())
+	randomId := strconv.Itoa(rand.Intn(10000))
+	document := fmt.Sprintf("doc%s_%s", ownerId, fileId)
 
 	urlArgs := url.Values{}
 	urlArgs.Add("user_id", userId)
 	urlArgs.Add("random_id", randomId)
 	urlArgs.Add("attachment", document)
 	urlArgs.Add("access_token", accessToken)
+	urlArgs.Add("message", "a")
 	urlArgs.Add("v", v)
 	urlInfo := urlArgs.Encode()
 
 	fullUrl := ApiMessage + urlInfo
-
-	logger.Println(fullUrl)
 
 	res, err := http.Get(fullUrl)
 	if err != nil {
