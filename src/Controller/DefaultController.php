@@ -138,9 +138,13 @@ class DefaultController extends AbstractController
      */
     private function sendBeer(array $data): void
     {
+        $userId = (string)$data['object']['from_id'];
+        if (!$this->queueService->checkUserId($userId)) {
+            $this->queueService->addUserId($userId);
+        }
         $rand = random_int(1, 10000000);
         $res = [
-            'user_id' => $data['object']['from_id'],
+            'user_id' => $userId,
             'random_id' => $rand,
             'v' => getenv('VK_API_VERSION'),
             'access_token' => getenv('VK_TOKEN'),
@@ -159,5 +163,9 @@ class DefaultController extends AbstractController
                 'body' => $res
             ]
         );
+
+        if (!$this->queueService->checkUserId($userId)) {
+            $this->queueService->addUserId($userId);
+        }
     }
 }

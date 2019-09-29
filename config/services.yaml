@@ -30,3 +30,5 @@ services:
         bind:
             $redisHost: '%redis_host%'
             $redisPort: '%redis_port%'
+        arguments:
+            - '@doctrine.orm.entity_manager'

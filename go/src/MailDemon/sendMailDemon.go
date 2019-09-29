@@ -45,12 +45,13 @@ var queue *redis.Client
 var consumerCount uint8 = 0
 var mu sync.Mutex
 var accessToken string
+var v string
 var err error
 
 const SendQ = "queue_send"
 const ApiMessage = "https://api.vk.com/method/messages.send?"
 const ApiSave = "https://api.vk.com/method/docs.save?"
-const ApiUploadServer = "https://api.vk.com/method/docs.getUploadServer?type=audio_message&peer_id="
+const ApiUploadServer = "https://api.vk.com/method/docs.getUploadServer?"
 
 func main() {
 	err = godotenv.Load("../.env")
@@ -60,6 +61,7 @@ func main() {
 	}
 
 	accessToken = os.Getenv("VK_TOKEN")
+	v = os.Getenv("VK_API_VERSION")
 
 	isRedis := redisConnect()
 
@@ -128,9 +130,10 @@ func sendMessage(fileId, ownerId, userId string) error {
 	urlArgs.Add("random_id", randomId)
 	urlArgs.Add("attachment", document)
 	urlArgs.Add("access_token", accessToken)
-	urlPart := urlArgs.Encode()
+	urlArgs.Add("v", v)
+	urlInfo := urlArgs.Encode()
 
-	fullurl := ApiMessage + urlPart
+	fullurl := ApiMessage + urlInfo
 
 	res, err := http.Get(fullurl)
 	if err != nil {
@@ -224,7 +227,13 @@ func uploadVkAudio(server, trackname string) (string, string, error) {
 }
 
 func saveFileVk(file string) (string, string, error) {
-	fullUrl := ApiSave + "&file=" + file + "&access_token=" + accessToken
+	urlArgs := url.Values{}
+	urlArgs.Add("file", file)
+	urlArgs.Add("access_token", accessToken)
+	urlArgs.Add("v", v)
+	urlInfo := urlArgs.Encode()
+
+	fullUrl := ApiSave + urlInfo
 
 	res, err := http.Get(fullUrl)
 	if err != nil {
@@ -250,8 +259,15 @@ func saveFileVk(file string) (string, string, error) {
 func getVkUploadServer(peerId string) (string, error) {
 	var server uploadApi
 	baseUrl := ApiUploadServer
-	ver := os.Getenv("VK_API_VERSION")
-	Url := baseUrl + peerId + "&v=" + ver + "&access_token=" + accessToken
+
+	urlArgs := url.Values{}
+	urlArgs.Add("type", "audio_message")
+	urlArgs.Add("peer_id", peerId)
+	urlArgs.Add("access_token", accessToken)
+	urlArgs.Add("v", v)
+	urlInfo := urlArgs.Encode()
+
+	Url := baseUrl + urlInfo
 
 	resp, err := http.Get(Url)
 	if err != nil {
