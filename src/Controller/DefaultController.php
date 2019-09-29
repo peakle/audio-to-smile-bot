@@ -87,7 +87,7 @@ class DefaultController extends AbstractController
     private function messageBox(array $data): ?Response
     {
         try {
-            if (strlen($data['object']['text']) === 4) {
+            if (mb_strlen($data['object']['text']) === 4) {
                 $message = mb_strtolower($data['object']['text']);
                 if ($message === 'пиво' || $message === 'beer') {
                     $rand = random_int(1, 10000000);
