@@ -7,6 +7,7 @@ import (
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
+	"log"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -22,13 +23,11 @@ type QueueBody struct {
 	Message string `json:"message"`
 }
 
-type Sample struct {
-	Name string `json:"sample"`
-}
-
 var queue *redis.Client
 var db *sql.DB
 var err error
+var logFile *os.File
+var logger *log.Logger
 
 var (
 	consumerCount uint8 = 0
@@ -39,14 +38,17 @@ const CreateQ = "queue_create"
 const SendQ = "queue_send"
 
 func main() {
-	err = godotenv.Load("../.env")
+	logging()
+	err = godotenv.Load(".env")
+
 	if err != nil {
-		fmt.Println("error when open env")
+		logger.Println("error when open env")
 		return
 	}
 
 	isRedis := redisConnect()
 	isMysql := mysqlConnect()
+	defer destruct()
 
 	if isMysql && isRedis {
 		handle()
@@ -67,11 +69,12 @@ func handle() {
 }
 
 func consumer(task *redis.StringCmd) {
-	var queueBody []QueueBody
+	var queueBody QueueBody
+	var taskBody string
 
-	taskBody, err := task.Result()
+	taskBody, err = task.Result()
 	if err != nil {
-		fmt.Println("error in get task body")
+		logger.Println("error in get task body", err.Error())
 		return
 	}
 
@@ -79,22 +82,23 @@ func consumer(task *redis.StringCmd) {
 
 	err = json.Unmarshal([]byte(taskBody), &queueBody)
 	if err != nil {
-		fmt.Println("error in decode json")
+		logger.Println("error in decode json", err.Error())
 		return
 	}
 
-	body := queueBody[0].Message
-	userId := queueBody[0].UserId
+	body := queueBody.Message
+	userId := queueBody.UserId
 
 	emojiList := findEmoji(body)
 
-	track, err := generateTrack(emojiList)
+	var track string
+	track, err = generateTrack(emojiList)
 	if err != nil {
 		return
 	}
 
 	if len(track) == 0 {
-		fmt.Println("error on create message")
+		logger.Println("null track")
 		return
 	}
 
@@ -105,7 +109,7 @@ func consumer(task *redis.StringCmd) {
 	})
 
 	if err != nil {
-		fmt.Println("error on create message")
+		logger.Println("error on create message", err.Error())
 		return
 	}
 
@@ -116,30 +120,28 @@ func consumer(task *redis.StringCmd) {
 
 func closeConsumer(task string) {
 	if err != nil {
-		queue.LPush(CreateQ, task)
+		queue.RPush(CreateQ, task)
 	}
 	consumerCount--
 }
 
 func generateTrack(emojiList []int) (string, error) {
+	var err error
 	randName := rand.Int() + rand.Intn(1000)
-	full := strconv.Itoa(randName) + ".ogg"
-	var tracks string
-	var sample Sample
-	var sampleRoute string
+	newTrack := "/app/mails" + strconv.Itoa(randName) + ".ogg"
+	var sampleList []string
+	var sample string
 
 	for num, code := range emojiList {
-		sampleRoute = ""
-		err := db.QueryRow("SELECT s.sample as sample FROM Smile as s WHERE s.code = ?", code).Scan(&sample.Name)
+		err = db.QueryRow("SELECT s.sample as sample FROM smile as s WHERE s.code = ?", code).Scan(&sample)
 
 		if err != nil {
-			fmt.Println("error in query mysql")
+			logger.Println("error in query mysql", err.Error())
 			return "", err
 		}
 
-		if sample.Name != "" {
-			sampleRoute = "../samples/" + sample.Name
-			tracks = tracks + sampleRoute
+		if sample != "" {
+			sampleList = append(sampleList, "/app/samples/"+sample)
 
 			if num > 10 {
 				break
@@ -147,22 +149,22 @@ func generateTrack(emojiList []int) (string, error) {
 		}
 	}
 
-	if len(tracks) > 0 {
+	if len(sampleList) > 0 {
 		command := "sox"
 
-		if len(tracks) == 1 {
+		if len(sampleList) == 1 {
 			command = "cp"
 		}
 
-		cmd := exec.Command(command, tracks+full)
-		err := cmd.Run()
-
+		sampleList = append(sampleList, newTrack)
+		cmd := exec.Command(command, sampleList...)
+		err = cmd.Run()
 		if err != nil {
-			fmt.Println("error on generate track")
+			logger.Println("error on generate track", err.Error())
 			return "", err
 		}
 
-		return full, nil
+		return newTrack, nil
 	}
 
 	return "", err
@@ -195,11 +197,11 @@ func redisConnect() bool {
 	res, err := queue.Ping().Result()
 
 	if err != nil || res == "" {
-		fmt.Println("can't connect to redis")
+		logger.Println("can't connect to redis", err.Error())
 		return false
 	}
 
-	fmt.Println("connected to redis")
+	logger.Println("connected to redis")
 
 	return true
 }
@@ -210,17 +212,31 @@ func mysqlConnect() bool {
 	user := os.Getenv("MYSQL_USER")
 	password := os.Getenv("MYSQL_PASSWORD")
 	dbName := os.Getenv("MYSQL_DATABASE")
-	mysqlAddr := os.Getenv("MYSQL_HOST") + ":" + os.Getenv("MYSQL_PORT")
 
-	cred := user + ":" + password + "@tcp(" + mysqlAddr + ")/" + dbName
+	cred := user + ":" + password + "@tcp(mysql)/" + dbName
 
 	db, err = sql.Open("mysql", cred)
 	if err != nil {
-		fmt.Println("error in connect to database")
+		logger.Println("error in connect to database", err.Error())
 		return false
 	}
 
-	fmt.Println("connected to db")
+	logger.Println("connected to db")
 
 	return true
+}
+
+func logging() {
+	logFile, err = os.OpenFile("var/log/createMessage.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Println("error on open create log")
+	}
+
+	logger = log.New(logFile, "", log.LstdFlags)
+}
+
+func destruct() {
+	_ = db.Close()
+	_ = queue.Close()
+	_ = logFile.Close()
 }
