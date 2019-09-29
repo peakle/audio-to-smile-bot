@@ -60,27 +60,25 @@ func handle() {
 		queueLen := queue.LLen(CreateQ).Val()
 		if queueLen > 0 && consumerCount < 2 {
 			task := queue.LPop(CreateQ)
-			go consumer(task)
-			consumerCount++
+
+			taskBody, _ := task.Result()
+
+			if len(taskBody) > 2 {
+				go consumer(taskBody)
+				consumerCount++
+			}
 		}
 
 		time.Sleep(1 * time.Second)
 	}
 }
 
-func consumer(task *redis.StringCmd) {
+func consumer(task string) {
 	var queueBody QueueBody
-	var taskBody string
 
-	taskBody, err = task.Result()
-	if err != nil {
-		logger.Println("error in get task body", err.Error())
-		return
-	}
+	defer closeConsumer(task)
 
-	defer closeConsumer(taskBody)
-
-	err = json.Unmarshal([]byte(taskBody), &queueBody)
+	err = json.Unmarshal([]byte(task), &queueBody)
 	if err != nil {
 		logger.Println("error in decode json", err.Error())
 		return
@@ -128,7 +126,7 @@ func closeConsumer(task string) {
 func generateTrack(emojiList []int) (string, error) {
 	var err error
 	randName := rand.Int() + rand.Intn(1000)
-	newTrack := "/app/mails" + strconv.Itoa(randName) + ".ogg"
+	newTrack := "/app/mails/" + strconv.Itoa(randName) + ".ogg"
 	var sampleList []string
 	var sample string
 

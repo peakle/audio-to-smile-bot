@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -28,17 +29,30 @@ type uploadApi struct {
 	UploadUrl string `json:"upload_url"`
 }
 
+type uploadCollection struct {
+	Response uploadApi `json:"response"`
+}
+
 type saveApi struct {
 	File string `json:"file"`
 }
 
+type AudioMessage struct {
+	Id      int `json:"id"`
+	OwnerId int `json:"owner_id"`
+}
+
 type saveResponseApi struct {
-	Id      string `json:"id"`
-	OwnerId string `json:"owner_id"`
+	Type  string       `json:"type"`
+	Audio AudioMessage `json:"audio_message"`
+}
+
+type saveResponseCollection struct {
+	Response saveResponseApi `json:"response"`
 }
 
 type messageApi struct {
-	Response string `json:"response"`
+	Response int `json:"response"`
 }
 
 var queue *redis.Client
@@ -53,7 +67,7 @@ var logger *log.Logger
 const SendQ = "queue_send"
 const ApiMessage = "https://api.vk.com/method/messages.send?"
 const ApiSave = "https://api.vk.com/method/docs.save?"
-const ApiUploadServer = "https://api.vk.com/method/docs.getUploadServer?"
+const ApiUploadServer = "https://api.vk.com/method/docs.getMessagesUploadServer?"
 
 func main() {
 	logging()
@@ -79,7 +93,12 @@ func handle() {
 		queueLen := queue.LLen(SendQ).Val()
 		if queueLen > 0 && consumerCount < 2 {
 			task := queue.LPop(SendQ)
-			go consumer(task)
+
+			taskBody, _ := task.Result()
+
+			if len(taskBody) > 2 {
+				go consumer(taskBody)
+			}
 			consumerCount++
 		}
 
@@ -87,17 +106,10 @@ func handle() {
 	}
 }
 
-func consumer(task *redis.StringCmd) {
-	var queueBody QueueBody
-	var taskBody string
-
-	taskBody, err = task.Result()
-	if err != nil {
-		logger.Println("error in get task body " + err.Error())
-		return
-	}
-
+func consumer(taskBody string) {
 	defer closeConsumer(taskBody)
+
+	var queueBody QueueBody
 
 	err = json.Unmarshal([]byte(taskBody), &queueBody)
 	if err != nil {
@@ -124,43 +136,46 @@ func consumer(task *redis.StringCmd) {
 	if err != nil {
 		return
 	}
+
+	err = os.Remove(message)
+	if err != nil {
+		logger.Println("error on remove file " + err.Error())
+		return
+	}
 }
 
-func sendMessage(fileId, ownerId, userId string) error {
-	randomId := string(rand.Int() + rand.Intn(100000))
-	document := fmt.Sprintf("doc%s_%s", fileId, ownerId)
+func getVkUploadServer(peerId string) (string, error) {
+	var server uploadCollection
+	baseUrl := ApiUploadServer
 
 	urlArgs := url.Values{}
-	urlArgs.Add("user_id", userId)
-	urlArgs.Add("random_id", randomId)
-	urlArgs.Add("attachment", document)
+	urlArgs.Add("type", "audio_message")
+	urlArgs.Add("peer_id", peerId)
 	urlArgs.Add("access_token", accessToken)
 	urlArgs.Add("v", v)
 	urlInfo := urlArgs.Encode()
 
-	fullUrl := ApiMessage + urlInfo
+	fullUrl := baseUrl + urlInfo
 
-	res, err := http.Get(fullUrl)
+	resp, err := http.Get(fullUrl)
 	if err != nil {
-		logger.Println("error in send message " + err.Error())
-		return err
+		logger.Println("error in request vk " + err.Error())
+		return "", err
 	}
 
-	resBody, err := ioutil.ReadAll(res.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		logger.Println("error in json decode " + err.Error())
-		return err
+		logger.Println("error in read response vk " + err.Error())
+		return "", err
 	}
 
-	var resMessage messageApi
-
-	err = json.Unmarshal(resBody, resMessage)
+	err = json.Unmarshal(body, &server)
 	if err != nil {
-		logger.Println("error in json decode " + err.Error())
-		return err
+		logger.Println("error on unmarshal json " + err.Error())
+		return "", err
 	}
 
-	return nil
+	return server.Response.UploadUrl, nil
 }
 
 func uploadVkAudio(server, track string) (string, string, error) {
@@ -181,7 +196,7 @@ func uploadVkAudio(server, track string) (string, string, error) {
 
 	_, err = io.Copy(part, file)
 	if err != nil {
-		logger.Println("error file close " + err.Error())
+		logger.Println("error file copy " + err.Error())
 		return "", "", err
 	}
 
@@ -216,12 +231,6 @@ func uploadVkAudio(server, track string) (string, string, error) {
 		return "", "", err
 	}
 
-	err = os.Remove(track)
-	if err != nil {
-		logger.Println("error on remove file " + err.Error())
-		return "", "", err
-	}
-
 	err = file.Close()
 	if err != nil {
 		logger.Println("error file close " + err.Error())
@@ -251,7 +260,7 @@ func saveFileVk(file string) (string, string, error) {
 		return "", "", err
 	}
 
-	var saveRes saveResponseApi
+	var saveRes saveResponseCollection
 
 	err = json.Unmarshal(body, &saveRes)
 	if err != nil {
@@ -259,46 +268,52 @@ func saveFileVk(file string) (string, string, error) {
 		return "", "", err
 	}
 
-	return saveRes.Id, saveRes.OwnerId, nil
+	return strconv.Itoa(saveRes.Response.Audio.Id), strconv.Itoa(saveRes.Response.Audio.OwnerId), nil
 }
 
-func getVkUploadServer(peerId string) (string, error) {
-	var server uploadApi
-	baseUrl := ApiUploadServer
+func sendMessage(fileId, ownerId, userId string) error {
+	randomId := strconv.Itoa(rand.Int() + rand.Intn(100000))
+	logger.Println(fileId, ownerId)
+	document := fmt.Sprintf("doc%s_%s", fileId, ownerId)
 
 	urlArgs := url.Values{}
-	urlArgs.Add("type", "audio_message")
-	urlArgs.Add("peer_id", peerId)
+	urlArgs.Add("user_id", userId)
+	urlArgs.Add("random_id", randomId)
+	urlArgs.Add("attachment", document)
 	urlArgs.Add("access_token", accessToken)
 	urlArgs.Add("v", v)
 	urlInfo := urlArgs.Encode()
 
-	Url := baseUrl + urlInfo
+	fullUrl := ApiMessage + urlInfo
 
-	resp, err := http.Get(Url)
+	logger.Println(fullUrl)
+
+	res, err := http.Get(fullUrl)
 	if err != nil {
-		logger.Println("error in request vk " + err.Error())
-		return "", err
+		logger.Println("error in send message " + err.Error())
+		return err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		logger.Println("error in read response vk " + err.Error())
-		return "", err
+		logger.Println("error in json decode " + err.Error())
+		return err
 	}
 
-	err = json.Unmarshal(body, &server)
+	var resMessage messageApi
+
+	err = json.Unmarshal(resBody, &resMessage)
 	if err != nil {
-		logger.Println("error on unmarshal json " + err.Error())
-		return "", err
+		logger.Println("error in json decode " + err.Error())
+		return err
 	}
 
-	return server.UploadUrl, nil
+	return nil
 }
 
 func closeConsumer(task string) {
 	if err != nil {
-		queue.LPush(SendQ, task)
+		queue.RPush(SendQ, task)
 	}
 	consumerCount--
 }
