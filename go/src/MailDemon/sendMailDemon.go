@@ -98,8 +98,8 @@ func handle() {
 
 			if len(taskBody) > 2 {
 				go consumer(taskBody)
+				consumerCount++
 			}
-			consumerCount++
 		}
 
 		time.Sleep(1 * time.Second)
