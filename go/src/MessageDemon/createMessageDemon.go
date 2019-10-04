@@ -63,7 +63,7 @@ func handle() {
 
 			taskBody, _ := task.Result()
 
-			if len(taskBody) > 2 {
+			if len(taskBody) > 4 {
 				go consumer(taskBody)
 				consumerCount++
 			}
@@ -119,6 +119,7 @@ func consumer(task string) {
 func closeConsumer(task string) {
 	if err != nil {
 		queue.RPush(CreateQ, task)
+		log.Println("task with error", task)
 	}
 	consumerCount--
 }
