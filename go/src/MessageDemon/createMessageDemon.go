@@ -89,6 +89,10 @@ func consumer(task string) {
 
 	emojiList := findEmoji(body)
 
+	if len(emojiList) == 0 {
+		return
+	}
+
 	var track string
 	track, err = generateTrack(emojiList)
 	if err != nil {
