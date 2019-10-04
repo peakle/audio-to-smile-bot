@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 	&& docker-php-ext-install -j$(nproc) gd
 
 RUN apt-get install -y sox && apt-get install unzip
-RUN apt-get install supervisor && apt-get install vim
+RUN apt-get install supervisor && apt-get install nano
 RUN apt-get install -y default-mysql-client
 RUN curl -sS https://getcomposer.org/installer -o composer-setup.php &&  php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 
