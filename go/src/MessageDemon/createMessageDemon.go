@@ -138,7 +138,7 @@ func generateTrack(emojiList []int) (string, error) {
 	for num, code := range emojiList {
 		err = db.QueryRow("SELECT s.sample as sample FROM smile as s WHERE s.code = ?", code).Scan(&sample)
 		if err == sql.ErrNoRows {
-			return "", nil
+			continue
 		} else if err != nil {
 			logger.Println("error in query mysql", err.Error())
 			return "", err
