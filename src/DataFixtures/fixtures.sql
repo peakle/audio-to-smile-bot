@@ -16,3 +16,6 @@ INSERT INTO smile (code, sample) values (128169, 'shit.ogg');
 # 🧐🤔
 INSERT INTO smile (code, sample) values (129488, 'think.ogg');
 INSERT INTO smile (code, sample) values (129300, 'think.ogg');
+# 
+INSERT INTO smile (code, sample) values (128073, 'rik.ogg');
+INSERT INTO smile (code, sample) values (128072, 'rik.ogg');
