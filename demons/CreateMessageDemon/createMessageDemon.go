@@ -108,7 +108,8 @@ func consumer(task string) {
 
 	var messageBody string
 	for emoji := range emojiList {
-		messageBody += html.UnescapeString("&#" + strconv.Itoa(emoji) + ";")
+		logger.Println(strconv.Itoa(emoji))
+		messageBody += html.UnescapeString("&#" + strconv.Itoa(emoji) + ";") + " "
 	}
 
 	var message []byte
