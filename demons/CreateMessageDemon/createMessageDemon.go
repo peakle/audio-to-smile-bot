@@ -97,12 +97,7 @@ func consumer(task string) {
 
 	var track string
 	track, err = generateTrack(emojiList)
-	if err != nil {
-		return
-	}
-
-	if len(track) == 0 {
-		logger.Println("null track")
+	if err != nil || len(track) == 0 {
 		return
 	}
 
@@ -146,6 +141,7 @@ func generateTrack(emojiList []int) (string, error) {
 	for num, code := range emojiList {
 		err = db.QueryRow("SELECT s.sample as sample FROM smile as s WHERE s.code = ?", code).Scan(&sample)
 		if err == sql.ErrNoRows {
+			err = nil
 			continue
 		} else if err != nil {
 			logger.Println("error in query mysql", err.Error())
