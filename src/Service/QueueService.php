@@ -53,24 +53,4 @@ class QueueService
     {
         return $this->queueClient->lpop($queueName);
     }
-
-    public function addUserId(string $id): void
-    {
-        $userId = new User();
-        $userId->setUserId($id);
-
-        $this->manager->persist($userId);
-        $this->manager->flush();
-    }
-
-    public function checkUserId(string $id): bool
-    {
-        $userId = $this->manager->getRepository(User::class)->findBy([
-            'id' => $id
-        ]);
-
-        $c = count($userId);
-
-        return !($c === 0);
-    }
 }
