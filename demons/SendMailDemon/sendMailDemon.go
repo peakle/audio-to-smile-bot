@@ -273,7 +273,7 @@ func sendMessage(fileId, ownerId, userId, messageBody string) error {
 	rand.Seed(time.Now().Unix())
 	randomId := strconv.Itoa(rand.Intn(10000))
 	document := fmt.Sprintf("doc%s_%s", ownerId, fileId)
-	logger.Println(messageBody)
+
 	urlArgs := url.Values{}
 	urlArgs.Add("user_id", userId)
 	urlArgs.Add("random_id", randomId)
