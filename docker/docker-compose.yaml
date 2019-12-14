@@ -48,6 +48,12 @@ services:
         container_name: ${PROJECT_NAME}_redis
         entrypoint: redis-server --appendonly yes
         image: redis:4.0.5-alpine
+        deploy:
+            restart_policy:
+                condition: on-failure
+                delay: 5s
+                max_attempts: 3
+                window: 120s
         ports:
             - "6379:6379"
         volumes:
