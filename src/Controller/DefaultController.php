@@ -7,10 +7,8 @@ namespace App\Controller;
 use App\Service\QueueService;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class DefaultController extends AbstractController
 {
@@ -58,8 +56,6 @@ class DefaultController extends AbstractController
      * @param Request $request
      *
      * @return Response|null
-     *
-     * @throws TransportExceptionInterface
      */
     public function index(Request $request): ?Response
     {
@@ -88,8 +84,6 @@ class DefaultController extends AbstractController
      * @param array $data
      *
      * @return Response|null
-     *
-     * @throws TransportExceptionInterface
      */
     private function messageBox(array $data): ?Response
     {
@@ -115,7 +109,7 @@ class DefaultController extends AbstractController
      */
     private function confirmation(array $data): ?Response
     {
-        if ($data['group_id'] && (string)$data['group_id'] === $this->groupId) {
+        if (isset($data['group_id']) && (string)$data['group_id'] === $this->groupId) {
             return new Response($this->vkConfirmationToken);
         }
 
