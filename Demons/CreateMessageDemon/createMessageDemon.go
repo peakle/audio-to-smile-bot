@@ -186,17 +186,18 @@ func findEmoji(text string) []int {
 
 func redisConnect() bool {
 	redisAddr := os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT")
+	redisPass := os.Getenv("REDIS_PASSWORD")
 
 	queue = redis.NewClient(&redis.Options{
 		Addr:     redisAddr,
-		Password: "",
+		Password: redisPass,
 		DB:       0,
 	})
 
 	res, err := queue.Ping().Result()
 
 	if err != nil || res == "" {
-		logger.Println("can't connect to redis", err.Error())
+		logger.Println("can't connect to redis")
 		return false
 	}
 

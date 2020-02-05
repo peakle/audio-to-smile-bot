@@ -317,9 +317,11 @@ func closeConsumer(task string) {
 
 func redisConnect() bool {
 	redisAddr := os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT")
+	redisPass := os.Getenv("REDIS_PASSWORD")
+
 	queue = redis.NewClient(&redis.Options{
 		Addr:     redisAddr,
-		Password: "",
+		Password: redisPass,
 		DB:       0,
 	})
 
