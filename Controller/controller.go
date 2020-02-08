@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/joho/godotenv"
 	"net/http"
@@ -37,8 +38,10 @@ type vkOutMessage struct {
 func main() {
 	err = godotenv.Load(".env")
 	if err != nil {
+		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+
 	if !redisConnect() {
 		os.Exit(1)
 	}
@@ -93,13 +96,19 @@ func redisConnect() bool {
 
 	queue = redis.NewClient(&redis.Options{
 		Addr:     redisAddr,
-		Password: "",
+		Password: os.Getenv("REDIS_PASSWORD"),
 		DB:       0,
 	})
 
 	res, err := queue.Ping().Result()
 
-	if err != nil || res == "" {
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+
+	if res == "" {
+		fmt.Println("redis not available")
 		return false
 	}
 
