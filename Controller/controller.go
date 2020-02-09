@@ -67,6 +67,7 @@ func main() {
 				_, _ = writer.Write([]byte{})
 				return
 			}
+			vkConfirmationToken = os.Getenv("VK_CONFIRMATION_TOKEN")
 
 			writer.WriteHeader(200)
 			_, _ = writer.Write([]byte(vkConfirmationToken))
