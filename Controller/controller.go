@@ -7,6 +7,7 @@ import (
 	"github.com/joho/godotenv"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 const (
@@ -16,18 +17,20 @@ const (
 )
 
 var (
-	secret              string
-	groupId             string
-	vkConfirmationToken string
-	queue               *redis.Client
-	err                 error
+	queue *redis.Client
+	err   error
 )
 
 type vkMessage struct {
-	Secret  string            `json:"secret"`
-	GroupId string            `json:"group_id"`
-	Type    string            `json:"type"`
-	Object  map[string]string `json:"object"`
+	Secret  string          `json:"secret"`
+	GroupId int             `json:"group_id"`
+	Type    string          `json:"type"`
+	Object  vkMessageObject `json:"object"`
+}
+
+type vkMessageObject struct {
+	FromId int    `json:"from_id"`
+	Text   string `json:"text"`
 }
 
 type vkOutMessage struct {
@@ -48,11 +51,15 @@ func main() {
 	defer destruct()
 
 	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		var body []byte
-		_, _ = request.Body.Read(body)
+		secret := os.Getenv("VK_API_SECRET")
+		groupId, _ := strconv.Atoi(os.Getenv("VK_GROUP_ID"))
+		vkConfirmationToken := os.Getenv("VK_CONFIRMATION_TOKEN")
 
 		message := vkMessage{}
-		_ = json.Unmarshal(body, &message)
+		err = json.NewDecoder(request.Body).Decode(&message)
+		if err != nil {
+			return
+		}
 
 		if message.Secret != secret || len(message.Secret) == 0 {
 			writer.WriteHeader(200)
@@ -67,7 +74,6 @@ func main() {
 				_, _ = writer.Write([]byte{})
 				return
 			}
-			vkConfirmationToken = os.Getenv("VK_CONFIRMATION_TOKEN")
 
 			writer.WriteHeader(200)
 			_, _ = writer.Write([]byte(vkConfirmationToken))
@@ -76,9 +82,11 @@ func main() {
 			writer.WriteHeader(200)
 			_, _ = writer.Write([]byte("ok"))
 
+			UserId := strconv.Itoa(message.Object.FromId)
+
 			queueBody, _ := json.Marshal(vkOutMessage{
-				UserId:  message.Object["from_id"],
-				Message: message.Object["message"],
+				UserId:  UserId,
+				Message: message.Object.Text,
 			})
 
 			queue.RPush(QueueCreate, queueBody)
