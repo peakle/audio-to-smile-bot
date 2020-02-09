@@ -23,12 +23,12 @@ type Message struct {
 	MessageBody string `json:"message"`
 }
 
-var queue *redis.Client
-var err error
-var logFile *os.File
-var logger *log.Logger
-
 var (
+	queue         *redis.Client
+	err           error
+	logFile       *os.File
+	logger        *log.Logger
+	workdir       string
 	consumerCount uint8 = 0
 	mu            sync.Mutex
 )
@@ -39,6 +39,8 @@ const SendQ = "queue_send"
 func main() {
 	logging()
 	err = godotenv.Load(".env")
+
+	workdir = os.Getenv("WORKDIR")
 
 	if err != nil {
 		logger.Println("error when open env")
@@ -130,7 +132,7 @@ func closeConsumer(task string) {
 func generateTrack(emojiList []int) (string, error) {
 	var err error
 	randName := rand.Int() + rand.Intn(1000)
-	newTrack := "/app/mails/" + strconv.Itoa(randName) + ".ogg"
+	newTrack := workdir + "/mails/" + strconv.Itoa(randName) + ".ogg"
 	var sampleList []string
 	var sample string
 	var isSet bool
@@ -141,7 +143,7 @@ func generateTrack(emojiList []int) (string, error) {
 			continue
 		}
 
-		sampleList = append(sampleList, "/app/samples/"+sample)
+		sampleList = append(sampleList, workdir+"/samples/"+sample)
 
 		if num > 10 {
 			break
