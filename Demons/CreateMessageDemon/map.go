@@ -4,9 +4,10 @@ var emojiMap = map[int]string{
 	//😀
 	128512: "smile.ogg",
 	//😂
-	128514: "laugh.ogg",
-	//😑😬
-	128529: "ss.ogg",
+	128514: "ahah.ogg",
+	//😑
+	128529: "hmm.ogg",
+	//😬
 	128556: "ss.ogg",
 	//🐊
 	128010: "crocodile.ogg",
@@ -16,8 +17,9 @@ var emojiMap = map[int]string{
 	128548: "proud.ogg",
 	//💩
 	128169: "shit.ogg",
-	//🧐🤔
-	129488: "think.ogg",
+	//🧐
+	129488: "boy.ogg",
+	//🤔
 	129300: "think.ogg",
 	//rik and morty ref
 	128073: "rik.ogg",
