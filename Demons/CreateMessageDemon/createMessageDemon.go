@@ -209,7 +209,8 @@ func redisConnect() bool {
 func logging() {
 	logFile, err = os.OpenFile("var/log/createMessage.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		fmt.Println("error on open create log")
+		fmt.Println("error on open create log " + err.Error())
+		os.Exit(1)
 	}
 
 	logger = log.New(logFile, "", log.LstdFlags)
