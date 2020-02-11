@@ -10,5 +10,5 @@ RUN apt-get update && apt install -y sox
 #RUN go build -o Controller/controller Controller/controller.go
 
 RUN Controller/controller &>/dev/null &
-RUN Demons/CreateMessageDemon/createMessageDemon_linux &>/dev/null &
-RUN Demons/sendMailDemon/sendMailDemon_linux &>/dev/null &
+RUN Demons/CreateMessageDemon/createMessageDemon &>/dev/null &
+RUN Demons/SendMailDemon/sendMailDemon &>/dev/null &
