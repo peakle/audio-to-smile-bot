@@ -310,6 +310,7 @@ func sendMessage(fileId, ownerId, userId, messageBody string) error {
 
 func closeConsumer(task string) {
 	if err != nil {
+		//TODO error counter for corrupted tasks
 		queue.RPush(SendQ, task)
 	}
 	consumerCount--

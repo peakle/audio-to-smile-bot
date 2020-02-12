@@ -124,6 +124,7 @@ func consumer(task string) {
 func closeConsumer(task string) {
 	if err != nil {
 		queue.RPush(CreateQ, task)
+		//TODO error counter for corrupted tasks
 		log.Println("task with error", task)
 	}
 	consumerCount--
